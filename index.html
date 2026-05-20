@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Audiência</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container">
+        <h1>📋 Cadastro de Audiência</h1>
+        <form id="formAudiencia" novalidate>
+            
+            <!-- Data da Audiência -->
+            <div class="campo">
+                <label for="data">1. Data da Audiência</label>
+                <input type="date" id="data" required>
+                <span class="erro" id="erroData"></span>
+            </div>
+
+            <!-- Hora da Audiência -->
+            <div class="campo dupla">
+                <div>
+                    <label for="horaInicio">2. Hora da Audiência (início)</label>
+                    <input type="time" id="horaInicio" required>
+                </div>
+                <div>
+                    <label for="horaFim">Término</label>
+                    <input type="time" id="horaFim" required>
+                </div>
+                <span class="erro" id="erroHora"></span>
+            </div>
+
+            <!-- Polo -->
+            <div class="campo">
+                <label for="polo">3. Polo da Audiência</label>
+                <select id="polo" required>
+                    <option value="">Selecione...</option>
+                </select>
+                <span class="erro" id="erroPolo"></span>
+            </div>
+
+            <!-- Vara -->
+            <div class="campo">
+                <label for="vara">4. Vara da Audiência</label>
+                <input type="text" id="vara" placeholder="Ex: VECA" required>
+                <span class="erro" id="erroVara"></span>
+            </div>
+
+            <!-- Competência -->
+            <div class="campo">
+                <label for="competencia">5. Competência da Audiência</label>
+                <select id="competencia" required>
+                    <option value="">Selecione...</option>
+                </select>
+                <span class="erro" id="erroCompetencia"></span>
+            </div>
+
+            <!-- Nº Processo -->
+            <div class="campo">
+                <label for="processo">6. Nº PROCESSO (20 dígitos)</label>
+                <input type="text" id="processo" placeholder="0000000-00.0000.0.00.0000" maxlength="25" inputmode="numeric" required>
+                <span class="erro" id="erroProcesso"></span>
+            </div>
+
+            <!-- Nome da Criança/Adolescente -->
+            <div class="campo">
+                <label for="nomeCrianca">7. NOME DA(S) CRIANÇA(S) / ADOLESCENTE(S)</label>
+                <input type="text" id="nomeCrianca" placeholder="Nome completo" required>
+                <span class="erro" id="erroNome"></span>
+            </div>
+
+            <button type="submit" id="btnEnviar">📨 Enviar Audiência</button>
+        </form>
+        <div id="mensagemSucesso" class="oculto"></div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

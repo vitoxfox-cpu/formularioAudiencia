@@ -1,0 +1,118 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    padding: 2rem;
+}
+
+h1 {
+    text-align: center;
+    color: #1e3a5f;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.campo {
+    margin-bottom: 1.2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.campo.dupla {
+    flex-direction: row;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.campo.dupla > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+input, select {
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border 0.2s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #2b6cb0;
+    box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.2);
+}
+
+.erro {
+    color: #c0392b;
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+    display: none;
+}
+
+.erro.ativo {
+    display: block;
+}
+
+button {
+    background: #1e3a5f;
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.3s;
+    margin-top: 1rem;
+}
+
+button:hover {
+    background: #2b6cb0;
+}
+
+#mensagemSucesso {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #d4edda;
+    color: #155724;
+    border-radius: 8px;
+    text-align: center;
+    display: none;
+}
+
+#mensagemSucesso.visivel {
+    display: block;
+}
+
+@media (max-width: 480px) {
+    .campo.dupla {
+        flex-direction: column;
+    }
+}

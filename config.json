@@ -1,0 +1,20 @@
+{
+  "diasNaoUteis": [
+    "2026-05-01",
+    "2026-05-15",
+    "2026-06-12",
+    "2026-07-09"
+  ],
+  "polos": [
+    "CAPITAL - 1ºNUR",
+    "CAPITAL - 2ºNUR",
+    "INTERIOR - 1ºNUR",
+    "INTERIOR - 2ºNUR"
+  ],
+  "competencias": [
+    "CRIMINAL",
+    "CÍVEL",
+    "FAMÍLIA",
+    "INFÂNCIA E JUVENTUDE"
+  ]
+}
