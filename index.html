@@ -2,15 +2,26 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Suplemento de Teste</title>
+  <title>Hello World Excel</title>
   <script src="https://microsoft.com"></script>
-  <script src="app.js" defer></script>
 </head>
 <body style="font-family: sans-serif; padding: 16px;">
-  <h3>Teste no Excel Online</h3>
-  <button id="btn-escrever" style="padding: 8px 12px; cursor: pointer;">
-    Escrever na célula selecionada
-  </button>
-  <p id="status"></p>
+  <h2>Hello World!</h2>
+  <p>O suplemento carregou no Excel Online.</p>
+  <button id="btn" style="padding: 8px 12px;">Testar Célula A1</button>
+  <p id="msg"></p>
+
+  <script>
+    Office.onReady(() => {
+      document.getElementById("btn").onclick = async () => {
+        await Excel.run(async (context) => {
+          const sheet = context.workbook.worksheets.getActiveWorksheet();
+          sheet.getRange("A1").values = [["Hello World!"]];
+          await context.sync();
+          document.getElementById("msg").innerText = "Escrito em A1!";
+        });
+      };
+    });
+  </script>
 </body>
 </html>
