@@ -2,27 +2,319 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Hello World Excel</title>
-  <!-- ✅ URL CORRETA do Office.js -->
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-</head>
-<body style="font-family: sans-serif; padding: 16px;">
-  <h2>Hello World!</h2>
-  <p>O suplemento carregou no Excel Online.</p>
-  <button id="btn" style="padding: 8px 12px;">Testar Célula A1</button>
-  <p id="msg"></p>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formulário de Audiências</title>
 
-  <script>
-    Office.onReady(() => {
-      document.getElementById("btn").onclick = async () => {
-        await Excel.run(async (context) => {
-          const sheet = context.workbook.worksheets.getActiveWorksheet();
-          sheet.getRange("A1").values = [["Hello World!"]];
-          await context.sync();
-          document.getElementById("msg").innerText = "Escrito em A1!";
-        });
-      };
-    });
-  </script>
+  <!-- 1. Office.js (CDN oficial) — OBRIGATÓRIO e deve vir ANTES do script.js -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+  <!-- 2. Seu CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="audiencias">Audiências</button>
+      <button class="tab" data-tab="entrevistadores">Entrevistadores</button>
+    </div>
+
+    <!-- ===================== ABA AUDIÊNCIAS ===================== -->
+    <div id="panelAudiencias" class="tab-content">
+      <h2>Cadastro/Edição de Audiência</h2>
+
+      <div class="edit-toggle">
+        <input type="checkbox" id="audienciaJaExiste" />
+        <label for="audienciaJaExiste">Audiência já existe?</label>
+      </div>
+      <hr class="separator" />
+
+      <div id="audienciaEditSelector" class="hidden">
+        <div class="field-group">
+          <label for="audienciaEditSelect">Selecione a audiência (ID):</label>
+          <select id="audienciaEditSelect">
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="audienciaFormPanel">
+        <!-- STATUS (só visível em modo edição) -->
+        <div class="field-group hidden" id="statusFieldGroup">
+          <label for="statusSelect">Status da Audiência:</label>
+          <select id="statusSelect">
+            <option value="PENDENTE">PENDENTE</option>
+            <option value="CONFIRMADO">CONFIRMADO</option>
+            <option value="CANCELADO">CANCELADO</option>
+            <option value="NÃO REALIZADO">NÃO REALIZADO</option>
+            <option value="REALIZADO">REALIZADO</option>
+          </select>
+          <input type="text" id="statusMotivoInput" placeholder="Motivo (obrigatório p/ CANCELADO e NÃO REALIZADO)" class="hidden" />
+        </div>
+
+        <div class="field-group">
+          <label for="dataInput">Data da Audiência:</label>
+          <input type="date" id="dataInput" />
+        </div>
+
+        <div class="field-group">
+          <label for="timeInput">Horário da Audiência:</label>
+          <div class="time-row">
+            <input type="text" id="timeInput" placeholder="Ex: 1400" maxlength="5" />
+            <span id="timePreview" class="time-preview"></span>
+          </div>
+          <small class="hint">Digite apenas 4 dígitos (ex: 1400 para 14:00)</small>
+        </div>
+
+        <div class="field-group">
+          <label for="poloSelect">Polo da Audiência:</label>
+          <select id="poloSelect">
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+
+        <div class="field-group" id="varaFieldGroup">
+          <label>Vara da Audiência:</label>
+          <div class="checkbox-row">
+            <input type="checkbox" id="novaVaraCheck" />
+            <label for="novaVaraCheck">Nova Vara?</label>
+          </div>
+          <div id="avisoNovaVara" class="aviso-nova-vara hidden">
+            <strong>⚠️ Atenção!</strong> Você está prestes a cadastrar uma nova Vara no Banco de Dados,
+            esse cadastro poderá ser usado em futuros agendamentos.
+          </div>
+          <div id="varaSelectGroup">
+            <select id="varaSelect">
+              <option value="">Selecione a vara...</option>
+            </select>
+            <input type="text" id="varaContatoDisplay" readonly placeholder="Contato da vara" />
+          </div>
+          <div id="novaVaraGroup" class="hidden">
+            <input type="text" id="varaNomeInput" placeholder="Nome da Vara" />
+            <input type="text" id="varaContatoInput" placeholder="Contato (email) da Vara" />
+          </div>
+        </div>
+
+        <div class="field-group" id="competenciaFieldGroup">
+          <label>Competência da Audiência:</label>
+          <div class="checkbox-row">
+            <input type="checkbox" id="novaCompetenciaCheck" />
+            <label for="novaCompetenciaCheck">Nova Competência?</label>
+          </div>
+          <div id="avisoNovaCompetencia" class="aviso-nova-vara hidden">
+            <strong>⚠️ Atenção!</strong> Você está prestes a cadastrar uma nova Competência ao
+            Banco de Dados, esse cadastro poderá ser usado em futuros agendamentos.
+          </div>
+          <div id="competenciaSelectGroup">
+            <select id="competenciaSelect">
+              <option value="">Selecione a competência...</option>
+            </select>
+          </div>
+          <div id="novaCompetenciaGroup" class="hidden">
+            <input type="text" id="competenciaNomeInput" placeholder="Nome da Competência" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="processoInput">Número do Processo:</label>
+          <input type="text" id="processoInput" maxlength="25" placeholder="Digite apenas os 20 dígitos" />
+          <small class="hint">Digite apenas os números. A formatação é automática.</small>
+          <div id="erroProcesso" class="aviso-nova-vara hidden"></div>
+        </div>
+
+        <div class="field-group" id="vitimaFieldGroup">
+          <label>Vítima(s) da Audiência:</label>
+          <input type="text" id="vitimaNomesInput" placeholder="Nome1/Nome2 (separe com /)" autocomplete="off" />
+          <div id="sugestoesVitimaList" class="sugestoes-list hidden"></div>
+          <div id="avisoRepeticaoVitima" class="aviso-nova-vara hidden"></div>
+          <input type="text" id="vitimaIdadesInput" placeholder="Idade1/Idade2 (ex: 8/7)" maxlength="20" />
+          <small class="hint">Separe múltiplas vítimas com "/" (ex: João/Maria e 8/7)</small>
+        </div>
+
+        <div class="field-group" id="adaptacaoFieldGroup">
+          <label>Necessária adaptação física ou comunicacional? *</label>
+          <div class="checkbox-row wrap" id="adaptacaoRadios">
+            <label><input type="radio" name="adaptacaoRadio" value="SIM" /> SIM</label>
+            <label><input type="radio" name="adaptacaoRadio" value="NÃO" /> NÃO</label>
+          </div>
+          <input type="text" id="adaptacaoDescricaoInput" placeholder="Descreva a adaptação necessária (obrigatório)" class="hidden" />
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- SEÇÃO DE ENTREVISTADORES (chips + botão +) -->
+        <!-- ===================================================== -->
+        <div class="field-group" id="entrevistadorFieldGroup">
+          <label for="entrevistadorSelect">Entrevistador(es) da Audiência:</label>
+          <div class="polo-add-row">
+            <select id="entrevistadorSelect">
+              <option value="">Carregando...</option>
+            </select>
+            <button type="button" id="btnAddEntrevistador" class="btn-secondary">+ Adicionar</button>
+          </div>
+          <input type="text" id="entrevistadorEmailDisplay" readonly placeholder="E-mail do entrevistador" />
+          <input type="text" id="entrevistadorExtraDisplay" readonly placeholder="Tipo / Disponibilidade" />
+          <div id="entrevistadorDivergencia" class="aviso-nova-vara hidden"></div>
+          <div id="entrevistadoresChips" class="chips-container"></div>
+          <small class="hint" id="entrevistadorHint">Verde = recomendado · Vermelho = divergência. Clique em "+ Adicionar" para incluir mais entrevistadores.</small>
+        </div>
+
+        <button id="btnSalvar" class="btn-primary" disabled>Cadastrar</button>
+        <div id="mensagem" class="mensagem hidden"></div>
+      </div>
+    </div>
+
+    <!-- ===================== ABA ENTREVISTADORES ===================== -->
+    <div id="panelEntrevistadores" class="tab-content hidden">
+      <h2>Cadastro/Edição de Entrevistador(a)</h2>
+
+      <div class="edit-toggle">
+        <input type="checkbox" id="entrevistadorJaExiste" />
+        <label for="entrevistadorJaExiste">Entrevistador(a) já existe?</label>
+      </div>
+      <hr class="separator" />
+
+      <div id="entrevistadorEditSelector" class="hidden">
+        <div class="field-group">
+          <label for="entrevistadorEditSelect">Selecione o entrevistador:</label>
+          <select id="entrevistadorEditSelect">
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="entrevistadorFormPanel">
+        <div class="field-group">
+          <label for="entNomeInput">Nome do Entrevistador: *</label>
+          <input type="text" id="entNomeInput" placeholder="Nome completo" autocomplete="off" />
+          <div id="entNomeSugestoes" class="sugestoes-list hidden"></div>
+          <div id="entNomeErro" class="aviso-nova-vara hidden"></div>
+          <small class="hint">Digite 3+ letras para ver sugestões.</small>
+        </div>
+
+        <div class="field-group">
+          <label for="entEmailInput">E-mail de Contato: *</label>
+          <input type="text" id="entEmailInput" placeholder="nome@dominio.com" />
+          <div id="entEmailErro" class="aviso-nova-vara hidden"></div>
+        </div>
+
+        <div class="field-group">
+          <label for="entTipoSelect">Tipo: *</label>
+          <select id="entTipoSelect">
+            <option value="">Selecione...</option>
+            <option value="INTERNO">INTERNO</option>
+            <option value="CAD-EXTERNO">CAD-EXTERNO</option>
+            <option value="RESIDENTE">RESIDENTE</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="entPrioridadeSelect">Prioridade: *</label>
+          <select id="entPrioridadeSelect">
+            <option value="">Selecione...</option>
+            <option value="OBRIGATÓRIO">OBRIGATÓRIO</option>
+            <option value="NEGOCIÁVEL">NEGOCIÁVEL</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="entDisponibilidadeSelect">Disponibilidade: *</label>
+          <select id="entDisponibilidadeSelect">
+            <option value="">Selecione...</option>
+            <option value="DISPONÍVEL">DISPONÍVEL</option>
+            <option value="INATIVO">INATIVO</option>
+            <option value="LICENÇA MÉDICA">LICENÇA MÉDICA</option>
+            <option value="FÉRIAS">FÉRIAS</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="entEspecialidadeInput">Especialidade: *</label>
+          <input type="text" id="entEspecialidadeInput" placeholder="Ex: PSI, AS, COMISSÁRIA..." />
+        </div>
+
+        <div class="field-group">
+          <label for="entLotacaoInput">Lotação:</label>
+          <input type="text" id="entLotacaoInput" placeholder="Lotação" />
+        </div>
+
+        <div class="field-group">
+          <label>Polos de Atuação: *</label>
+          <div class="polo-add-row">
+            <select id="entPoloSelect">
+              <option value="">Selecione o polo...</option>
+            </select>
+            <button type="button" id="btnAddPolo" class="btn-secondary">+ Adicionar</button>
+          </div>
+          <div id="entPolosChips" class="chips-container"></div>
+          <small class="hint">Adicione todos os polos onde este entrevistador pode atuar.</small>
+        </div>
+
+        <div class="field-group">
+          <label>Dias Disponíveis: *</label>
+          <div class="checkbox-row wrap" id="entDiasSemana">
+            <label><input type="checkbox" value="Segunda" /> Seg</label>
+            <label><input type="checkbox" value="Terça" /> Ter</label>
+            <label><input type="checkbox" value="Quarta" /> Qua</label>
+            <label><input type="checkbox" value="Quinta" /> Qui</label>
+            <label><input type="checkbox" value="Sexta" /> Sex</label>
+            <label><input type="checkbox" id="entTodosDiasCheck" value="Todos" /> Todos</label>
+          </div>
+
+          <details class="dias-especificos">
+            <summary>➕ Dias específicos (ex: 2ª terça-feira do mês)</summary>
+            <div class="dias-especificos-content">
+              <div class="polo-add-row">
+                <select id="entDiaEspOrdem">
+                  <option value="">Ordem...</option>
+                  <option value="1ª">1ª</option>
+                  <option value="2ª">2ª</option>
+                  <option value="3ª">3ª</option>
+                  <option value="4ª">4ª</option>
+                  <option value="5ª">5ª</option>
+                  <option value="última">última</option>
+                </select>
+                <select id="entDiaEspDia">
+                  <option value="">Dia...</option>
+                  <option value="segunda-feira">segunda-feira</option>
+                  <option value="terça-feira">terça-feira</option>
+                  <option value="quarta-feira">quarta-feira</option>
+                  <option value="quinta-feira">quinta-feira</option>
+                  <option value="sexta-feira">sexta-feira</option>
+                </select>
+                <button type="button" id="btnAddDiaEspecifico" class="btn-secondary">+ Adicionar</button>
+              </div>
+              <div id="entDiasEspecificosChips" class="chips-container"></div>
+              <small class="hint">Ex: "2ª terça-feira do mês", "última sexta-feira do mês".</small>
+            </div>
+          </details>
+        </div>
+
+        <div class="field-group">
+          <label for="entObsInput">OBS / CAD locais:</label>
+          <textarea id="entObsInput" rows="3" placeholder="Opcional"></textarea>
+        </div>
+
+        <button id="btnSalvarEntrevistador" class="btn-primary" disabled>Cadastrar</button>
+        <div id="entMensagem" class="mensagem hidden"></div>
+      </div>
+    </div>
+
+    <div id="resultadoPanel" class="resultado-panel hidden">
+      <div class="resultado-content">
+        <h2 id="resultadoTitulo">Sucesso!</h2>
+        <div id="resultadoDetalhes" class="resultado-detalhes"></div>
+        <button id="btnReiniciar" class="btn-primary">Voltar ao formulário</button>
+      </div>
+    </div>
+
+    <div id="overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <div class="spinner"></div>
+        <p>Processando...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Seu script — DEPOIS do Office.js e no fim do body -->
+  <script src="script.js"></script>
 </body>
 </html>
