@@ -26,6 +26,9 @@ var todosPolos = [];
 var vitimasCache = [];
 
 var audienciasCache = [];
+var diasNaoUteis = [];
+var dadosCalendarioCarregados = false;
+var mesCalendario = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 var sugestoesTimeout = null;
 var nomeSugestoesTimeout = null;
@@ -109,6 +112,15 @@ function configurarListenersAudiencia() {
   var poloSelect = document.getElementById("poloSelect");
   poloSelect.addEventListener("change", function () {
     onDataOuPoloChange();
+  });
+
+  document.getElementById("mesAnterior").addEventListener("click", function () {
+    mesCalendario = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth() - 1, 1);
+    renderizarCalendario();
+  });
+  document.getElementById("mesSeguinte").addEventListener("click", function () {
+    mesCalendario = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth() + 1, 1);
+    renderizarCalendario();
   });
 
   document.getElementById("varaSelect").addEventListener("change", onVaraSelectChange);
@@ -240,7 +252,9 @@ function normalizarDataBR(raw) {
   if (raw === null || raw === undefined || raw === "") return "";
   if (raw instanceof Date) return pad2(raw.getDate()) + "/" + pad2(raw.getMonth() + 1) + "/" + raw.getFullYear();
   if (typeof raw === "number") return excelSerialParaBR(raw);
-  return String(raw).trim();
+  var texto = String(raw).trim();
+  var partes = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return partes ? pad2(partes[1]) + "/" + pad2(partes[2]) + "/" + partes[3] : texto;
 }
 
 function formatarHoraInput(valor) {
@@ -561,6 +575,128 @@ function calcularScore(e, poloAudi, dataAudi) {
   return { tipo: "green", score: score, motivo: "" };
 }
 
+function audienciasAgendadas(dataBR, polo) {
+  return audienciasCache.filter(function (a) {
+    var status = a.status.toUpperCase();
+    return a.data === dataBR && a.polo.toUpperCase() === polo.toUpperCase() &&
+      status.indexOf("CANCELADO") !== 0 && status.indexOf("NÃO REALIZADO") !== 0 &&
+      status.indexOf("NAO REALIZADO") !== 0;
+  }).sort(function (a, b) {
+    return a.hora.localeCompare(b.hora);
+  });
+}
+
+function datasNaoUteisDoRange(range) {
+  return range.values.map(function (row, indice) {
+    return normalizarDataBR(row[0]) || normalizarDataBR(range.text[indice][0]);
+  }).filter(Boolean);
+}
+
+function motivoDataIndisponivel(dataISO) {
+  var data = dateObjFromISO(dataISO);
+  var hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  if (data < hoje) return "Data anterior a hoje";
+  if (data.getDay() === 0 || data.getDay() === 6) return "Fim de semana";
+  if (diasNaoUteis.indexOf(converterParaBR(dataISO)) !== -1) return "Feriado ou recesso";
+  return "";
+}
+
+function tipoDiaCalendario(dataISO, polo) {
+  if (!dadosCalendarioCarregados || !polo || motivoDataIndisponivel(dataISO)) return "indisponivel";
+  var dataBR = converterParaBR(dataISO);
+  var internoDisponivel = entrevistadoresData.some(function (e) {
+    var tipo = e.tipo.trim().toUpperCase();
+    return (tipo === "INTERNO" || tipo === "RESIDENTE") && calcularScore(e, polo, dataBR).tipo === "green";
+  });
+  return internoDisponivel ? "disponivel" : "negociavel";
+}
+
+function renderizarCalendario() {
+  var dias = document.getElementById("calendarioDias");
+  var polo = document.getElementById("poloSelect").value;
+  var selecionada = document.getElementById("dataInput").value;
+  var ano = mesCalendario.getFullYear();
+  var mes = mesCalendario.getMonth();
+  document.getElementById("calendarioMes").textContent =
+    mesCalendario.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  dias.textContent = "";
+  var primeiroDia = new Date(ano, mes, 1).getDay();
+  var totalDias = new Date(ano, mes + 1, 0).getDate();
+  for (var vazio = 0; vazio < primeiroDia; vazio++) {
+    dias.appendChild(document.createElement("span"));
+  }
+  for (var dia = 1; dia <= totalDias; dia++) {
+    var iso = ano + "-" + pad2(mes + 1) + "-" + pad2(dia);
+    var tipo = tipoDiaCalendario(iso, polo);
+    var quantidade = polo ? audienciasAgendadas(converterParaBR(iso), polo).length : 0;
+    var descricao = tipo === "disponivel" ? "Interno ou residente disponível" :
+      tipo === "negociavel" ? "Negociável com CAD-EXTERNO" :
+      (!dadosCalendarioCarregados ? "Dados do calendário não carregados" :
+        (!polo ? "Selecione um polo" : motivoDataIndisponivel(iso)));
+    var texto = converterParaBR(iso) + " — " + descricao + " — " + quantidade +
+      (quantidade === 1 ? " audiência" : " audiências");
+    var botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = "calendario-dia " + tipo + (iso === selecionada ? " selecionado" : "");
+    botao.textContent = String(dia);
+    botao.title = texto;
+    botao.setAttribute("aria-label", texto);
+    botao.setAttribute("aria-pressed", iso === selecionada ? "true" : "false");
+    if (tipo === "indisponivel") botao.setAttribute("aria-disabled", "true");
+    (function (data, estado) {
+      botao.addEventListener("click", function () {
+        if (estado === "indisponivel") return;
+        document.getElementById("dataInput").value = data;
+        onDataOuPoloChange();
+      });
+    })(iso, tipo);
+    dias.appendChild(botao);
+  }
+}
+
+function renderizarAudienciasDoDia() {
+  var area = document.getElementById("audienciasDoDia");
+  var data = document.getElementById("dataInput").value;
+  var polo = document.getElementById("poloSelect").value;
+  area.textContent = "";
+  if (!data || !polo || !dadosCalendarioCarregados) return;
+  var audiencias = audienciasAgendadas(converterParaBR(data), polo);
+  var titulo = document.createElement("strong");
+  titulo.textContent = "Audiências em " + converterParaBR(data) + ":";
+  area.appendChild(titulo);
+  if (!audiencias.length) {
+    var vazio = document.createElement("p");
+    vazio.textContent = "Nenhuma audiência agendada.";
+    area.appendChild(vazio);
+    return;
+  }
+  var tabela = document.createElement("table");
+  var cabecalho = document.createElement("tr");
+  ["Horário ocupado", "Entrevistador"].forEach(function (texto) {
+    var th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = texto;
+    cabecalho.appendChild(th);
+  });
+  tabela.appendChild(cabecalho);
+  audiencias.forEach(function (a) {
+    var linha = document.createElement("tr");
+    var hora = document.createElement("td");
+    hora.textContent = a.hora;
+    var nomes = document.createElement("td");
+    nomes.textContent = a.entrevistador.split("/").map(function (nome) {
+      nome = nome.trim();
+      var e = entrevistadoresData.find(function (item) { return item.nome === nome; });
+      return nome + " - " + (e ? e.tipo : "TIPO NÃO CADASTRADO");
+    }).join(", ");
+    linha.appendChild(hora);
+    linha.appendChild(nomes);
+    tabela.appendChild(linha);
+  });
+  area.appendChild(tabela);
+}
+
 function atualizarSelectEntrevistador() {
   var sel = document.getElementById("entrevistadorSelect");
   if (!sel) return;
@@ -807,17 +943,21 @@ function definirProcessando(ativo) {
 // ============================================================
 
 async function carregarTudoInicial() {
+  dadosCalendarioCarregados = false;
+  renderizarCalendario();
   try {
     await Excel.run(async function (context) {
       var formSheet = context.workbook.worksheets.getItem("Formulário");
       var cadSheet = context.workbook.worksheets.getItem("CADASTROS");
 
       var rangePolos = formSheet.getRange("AD2:AD30");
+      var rangeDiasNaoUteis = formSheet.getRange("AB2:AB30");
       var rangeVaras = cadSheet.getRange("AA2:AB1000");
       var rangeComp = cadSheet.getRange("AC2:AC1000");
       var rangeEnt = cadSheet.getRange("A2:J1000");
 
       rangePolos.load("values");
+      rangeDiasNaoUteis.load("values, text");
       rangeVaras.load("values");
       rangeComp.load("values");
       rangeEnt.load("values");
@@ -834,6 +974,8 @@ async function carregarTudoInicial() {
 
       await context.sync();
 
+      diasNaoUteis = datasNaoUteisDoRange(rangeDiasNaoUteis);
+
       todosPolos = [];
       for (var i = 0; i < rangePolos.values.length; i++) {
         var v = rangePolos.values[i][0];
@@ -844,6 +986,7 @@ async function carregarTudoInicial() {
       var selPoloEnt = document.getElementById("entPoloSelect");
 
       if (selectPolo) {
+        var poloAtual = selectPolo.value;
         selectPolo.innerHTML = "";
         var d = document.createElement("option");
         d.value = "";
@@ -856,6 +999,7 @@ async function carregarTudoInicial() {
           o.textContent = p;
           selectPolo.appendChild(o);
         }
+        selectPolo.value = poloAtual;
       }
 
       if (selPoloEnt) {
@@ -1068,9 +1212,13 @@ async function carregarTudoInicial() {
 
       atualizarSelectEntrevistador();
       renderizarChipsEntrevistadores();
+      dadosCalendarioCarregados = true;
+      renderizarCalendario();
+      renderizarAudienciasDoDia();
     });
   } catch (error) {
     console.error("[INIT] Falha no carregamento:", error);
+    exibirMensagem("Não foi possível carregar os dados do calendário. Reabra o formulário e tente novamente.", "erro");
   }
 }
 
@@ -1092,6 +1240,8 @@ function onDataOuPoloChange() {
   }
 
   atualizarSelectEntrevistador();
+  renderizarCalendario();
+  renderizarAudienciasDoDia();
   atualizarEstadoBotao();
 }
 
@@ -1378,6 +1528,10 @@ async function onAudienciaEditSelectChange() {
 
 function preencherFormularioAudiencia(c, idades) {
   document.getElementById("dataInput").value = converterParaISO(c.data);
+  if (document.getElementById("dataInput").value) {
+    var dataCalendario = dateObjFromISO(document.getElementById("dataInput").value);
+    mesCalendario = new Date(dataCalendario.getFullYear(), dataCalendario.getMonth(), 1);
+  }
   var hp = c.hora.split("/");
   document.getElementById("timeInput").value = (hp.length > 1 ? hp[1].trim() : c.hora.trim()).substring(0, 5);
   document.getElementById("poloSelect").value = c.polo;
@@ -1429,6 +1583,8 @@ function preencherFormularioAudiencia(c, idades) {
   document.getElementById("entrevistadorExtraDisplay").value = "";
 
   preencherStatusSelect(c.status);
+  renderizarCalendario();
+  renderizarAudienciasDoDia();
   atualizarPreview();
 }
 
@@ -1470,6 +1626,8 @@ function limparFormularioAudiencia() {
   }
 
   atualizarSelectEntrevistador();
+  renderizarCalendario();
+  renderizarAudienciasDoDia();
   alternarModoVara();
   alternarModoCompetencia();
   atualizarPreview();
@@ -2238,6 +2396,10 @@ async function removerDaAbaPolo(context, nomeAba, id) {
 async function salvarData() {
   if (modoEdicaoAudiencia) return salvarAudienciaEdicao();
 
+  if (!dadosCalendarioCarregados) {
+    exibirMensagem("Os dados do calendário não foram carregados.", "erro");
+    return;
+  }
   var inputData = document.getElementById("dataInput");
   var timeInput = document.getElementById("timeInput");
   var poloSelect = document.getElementById("poloSelect");
@@ -2383,15 +2545,12 @@ async function salvarData() {
       var sheet = context.workbook.worksheets.getItem("Formulário");
 
       var rangeF = sheet.getRange("AB2:AB30");
-      rangeF.load("text");
+      rangeF.load("values, text");
       await context.sync();
-      var feriados = [];
-      for (var i = 0; i < rangeF.text.length; i++) {
-        var v = rangeF.text[i][0];
-        if (v !== "" && v !== null && v !== undefined) feriados.push(String(v).trim());
-      }
-      if (feriados.indexOf(dataFormatada) !== -1) {
-        exibirMensagem("A data " + dataFormatada + " é feriado.", "erro");
+      diasNaoUteis = datasNaoUteisDoRange(rangeF);
+      if (diasNaoUteis.indexOf(dataFormatada) !== -1) {
+        renderizarCalendario();
+        exibirMensagem("A data " + dataFormatada + " é feriado ou recesso.", "erro");
         definirProcessando(false);
         atualizarEstadoBotao();
         return;
@@ -2697,6 +2856,10 @@ async function salvarData() {
 async function salvarAudienciaEdicao() {
   if (!audienciaEmEdicao) return;
 
+  if (!dadosCalendarioCarregados) {
+    exibirMensagem("Os dados do calendário não foram carregados.", "erro");
+    return;
+  }
   var inputData = document.getElementById("dataInput");
   var timeInput = document.getElementById("timeInput");
   var poloSelect = document.getElementById("poloSelect");
@@ -2795,9 +2958,9 @@ async function salvarAudienciaEdicao() {
     exibirMensagem("Data inválida.", "erro");
     return;
   }
-  var diaSem = dataSel.getDay();
-  if (diaSem === 0 || diaSem === 6) {
-    exibirMensagem("A data não pode ser fim de semana.", "erro");
+  var dataAlterada = dataFormatada !== audienciaEmEdicao.data;
+  if (dataAlterada && motivoDataIndisponivel(inputData.value)) {
+    exibirMensagem("A data selecionada está indisponível: " + motivoDataIndisponivel(inputData.value) + ".", "erro");
     return;
   }
 
@@ -2808,6 +2971,16 @@ async function salvarAudienciaEdicao() {
   try {
     await Excel.run(async function (context) {
       var sheet = context.workbook.worksheets.getItem("Formulário");
+
+      var rangeF = sheet.getRange("AB2:AB30");
+      rangeF.load("values, text");
+      await context.sync();
+      diasNaoUteis = datasNaoUteisDoRange(rangeF);
+      if (dataAlterada && diasNaoUteis.indexOf(dataFormatada) !== -1) {
+        renderizarCalendario();
+        exibirMensagem("A data " + dataFormatada + " é feriado ou recesso.", "erro");
+        return;
+      }
 
       if (await processoJaExiste(context, sheet, digitos, idEditado)) {
         exibirMensagem("Processo já está em outra audiência.", "erro");
