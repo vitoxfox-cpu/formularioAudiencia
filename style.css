@@ -95,6 +95,24 @@ textarea { resize: vertical; min-height: 60px; }
 
 .hint { display: block; font-size: 11px; color: #666; margin-top: 4px; }
 
+.calendario { border: 1px solid #ccc; border-radius: 4px; padding: 8px; background: #fff; }
+.calendario-cabecalho { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.calendario-cabecalho strong { font-size: 14px; text-transform: capitalize; }
+.calendario-cabecalho button { border: 0; background: #e8eaf6; border-radius: 4px; cursor: pointer; font-size: 20px; padding: 0 10px; }
+.calendario-semana, .calendario-dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.calendario-semana { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.calendario-dia { min-height: 34px; padding: 2px; border: 1px solid transparent; border-radius: 4px; font: inherit; font-size: 12px; cursor: pointer; }
+.calendario-dia.disponivel { background: #dcedc8; color: #1b5e20; }
+.calendario-dia.negociavel { background: #dbeafe; color: #0d47a1; }
+.calendario-dia.indisponivel { background: transparent; color: #777; cursor: not-allowed; }
+.calendario-dia.selecionado { border: 2px solid #1a237e; font-weight: 700; }
+.calendario-dia:focus-visible, .calendario-cabecalho button:focus-visible { outline: 2px solid #1a237e; outline-offset: 1px; }
+.audiencias-dia { margin-top: 10px; font-size: 12px; }
+.audiencias-dia p { margin: 4px 0; }
+.audiencias-dia table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.audiencias-dia th, .audiencias-dia td { border-bottom: 1px solid #ddd; padding: 5px 3px; text-align: left; vertical-align: top; }
+.audiencias-dia td:first-child { white-space: nowrap; }
+
 .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .checkbox-row.wrap { flex-wrap: wrap; }
 .checkbox-row input[type="checkbox"] { width: auto; margin: 0; }

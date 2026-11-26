@@ -52,8 +52,29 @@
         </div>
 
         <div class="field-group">
-          <label for="dataInput">Data da Audiência:</label>
-          <input type="date" id="dataInput" />
+          <label for="poloSelect">Polo da Audiência:</label>
+          <select id="poloSelect">
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label id="calendarioLabel">Data da Audiência:</label>
+          <input type="hidden" id="dataInput" />
+          <div class="calendario" role="group" aria-labelledby="calendarioLabel">
+            <div class="calendario-cabecalho">
+              <button type="button" id="mesAnterior" aria-label="Mês anterior">‹</button>
+              <strong id="calendarioMes" aria-live="polite"></strong>
+              <button type="button" id="mesSeguinte" aria-label="Mês seguinte">›</button>
+            </div>
+            <div class="calendario-semana" aria-hidden="true">
+              <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+            </div>
+            <div id="calendarioDias" class="calendario-dias"></div>
+          </div>
+          <small class="hint">Verde: interno/residente disponível · Azul: negociável com CAD-EXTERNO · Sem cor: indisponível. Selecione um polo primeiro.</small>
+          <small class="hint">A cor considera o polo e os dias cadastrados, não os horários já ocupados.</small>
+          <div id="audienciasDoDia" class="audiencias-dia" aria-live="polite"></div>
         </div>
 
         <div class="field-group">
@@ -65,11 +86,19 @@
           <small class="hint">Digite apenas 4 dígitos (ex: 1400 para 14:00)</small>
         </div>
 
-        <div class="field-group">
-          <label for="poloSelect">Polo da Audiência:</label>
-          <select id="poloSelect">
-            <option value="">Carregando...</option>
-          </select>
+        <div class="field-group" id="entrevistadorFieldGroup">
+          <label for="entrevistadorSelect">Entrevistador(es) da Audiência:</label>
+          <div class="polo-add-row">
+            <select id="entrevistadorSelect">
+              <option value="">Carregando...</option>
+            </select>
+            <button type="button" id="btnAddEntrevistador" class="btn-secondary">+ Adicionar</button>
+          </div>
+          <input type="text" id="entrevistadorEmailDisplay" readonly placeholder="E-mail do entrevistador" />
+          <input type="text" id="entrevistadorExtraDisplay" readonly placeholder="Tipo / Disponibilidade" />
+          <div id="entrevistadorDivergencia" class="aviso-nova-vara hidden"></div>
+          <div id="entrevistadoresChips" class="chips-container"></div>
+          <small class="hint" id="entrevistadorHint">Verde = recomendado · Vermelho = divergência. Clique em "+ Adicionar" para incluir mais entrevistadores.</small>
         </div>
 
         <div class="field-group" id="varaFieldGroup">
@@ -137,24 +166,6 @@
             <label><input type="radio" name="adaptacaoRadio" value="NÃO" /> NÃO</label>
           </div>
           <input type="text" id="adaptacaoDescricaoInput" placeholder="Descreva a adaptação necessária (obrigatório)" class="hidden" />
-        </div>
-
-        <!-- ===================================================== -->
-        <!-- SEÇÃO DE ENTREVISTADORES (chips + botão +) -->
-        <!-- ===================================================== -->
-        <div class="field-group" id="entrevistadorFieldGroup">
-          <label for="entrevistadorSelect">Entrevistador(es) da Audiência:</label>
-          <div class="polo-add-row">
-            <select id="entrevistadorSelect">
-              <option value="">Carregando...</option>
-            </select>
-            <button type="button" id="btnAddEntrevistador" class="btn-secondary">+ Adicionar</button>
-          </div>
-          <input type="text" id="entrevistadorEmailDisplay" readonly placeholder="E-mail do entrevistador" />
-          <input type="text" id="entrevistadorExtraDisplay" readonly placeholder="Tipo / Disponibilidade" />
-          <div id="entrevistadorDivergencia" class="aviso-nova-vara hidden"></div>
-          <div id="entrevistadoresChips" class="chips-container"></div>
-          <small class="hint" id="entrevistadorHint">Verde = recomendado · Vermelho = divergência. Clique em "+ Adicionar" para incluir mais entrevistadores.</small>
         </div>
 
         <button id="btnSalvar" class="btn-primary" disabled>Cadastrar</button>
